@@ -148,6 +148,7 @@ labelPRBasedOnFilePath:
 
   area:migrations:
     - airflow/migrations/*
+    - airflow/migrations/**/*
     - airflow/alembic.ini
 
 # Comment to be posted to welcome users when they open their first PR
