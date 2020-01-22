@@ -246,7 +246,8 @@ def get_execution_dates(dag, execution_date, future, past):
     """Returns dates of DAG execution"""
     latest_execution_date = dag.latest_execution_date
     if latest_execution_date is None:
-        raise ValueError("Received non-localized date {}".format(execution_date))
+        return []
+        # raise ValueError("Received non-localized date {}".format(execution_date))
     # determine date range of dag runs and tasks to consider
     end_date = latest_execution_date if future else execution_date
     if 'start_date' in dag.default_args:

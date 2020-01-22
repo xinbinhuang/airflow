@@ -1259,12 +1259,16 @@ class Airflow(AirflowBaseView):
                                   future=future, past=past, state=state,
                                   commit=False)
 
-        details = "\n".join([str(t) for t in to_be_altered])
+        if not to_be_altered:
+            flash("No task instances to mark {}".format(state), 'error')
+            response = redirect(origin)
+        else:
+            details = "\n".join([str(t) for t in to_be_altered])
 
-        response = self.render_template(
-            "airflow/confirm.html",
-            message=("Here's the list of task instances you are about to mark as {}:".format(state)),
-            details=details)
+            response = self.render_template(
+                "airflow/confirm.html",
+                message=("Here's the list of task instances you are about to mark as {}:".format(state)),
+                details=details)
 
         return response
 
