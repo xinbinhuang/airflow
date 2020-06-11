@@ -1113,7 +1113,8 @@ class BaseOperator(Operator, LoggingMixin):
 
         if dag and not self.has_dag():
             self.dag = dag
-
+        
+        
         for task in task_list:
             if dag and not task.has_dag():
                 task.dag = dag
@@ -1121,6 +1122,9 @@ class BaseOperator(Operator, LoggingMixin):
                 task.add_only_new(task.get_direct_relative_ids(upstream=False), self.task_id)
                 self.add_only_new(self._upstream_task_ids, task.task_id)
             else:
+                # if isinstance(task, NewSubDagOperator):
+                #     self._set_relatives(task.subdag.roots, upstream=False)
+                # else:
                 self.add_only_new(self._downstream_task_ids, task.task_id)
                 task.add_only_new(task.get_direct_relative_ids(upstream=True), self.task_id)
 
@@ -1129,14 +1133,46 @@ class BaseOperator(Operator, LoggingMixin):
         Set a task or a task list to be directly downstream from the current
         task.
         """
-        self._set_relatives(task_or_task_list, upstream=False)
+        
+        from airflow.operators.subdag_operator import NewSubDagOperator
+        tasks = []
+        try:
+            task_list = list(task_or_task_list)  # type: ignore
+        except TypeError:
+            task_list = [task_or_task_list] 
+        for task in task_list:
+            if isinstance(task, NewSubDagOperator):
+                tasks.extend(task.subdag.roots)
+            else:
+                tasks.append(task)
+        # breakpoint()
+        if isinstance(self, NewSubDagOperator): 
+            cross_downstream(from_tasks=self.subdag.leaves, to_tasks=task_list)
+        else:
+            self._set_relatives(task_list, upstream=False)
 
     def set_upstream(self, task_or_task_list: Union['BaseOperator', List['BaseOperator']]) -> None:
         """
         Set a task or a task list to be directly upstream from the current
         task.
         """
-        self._set_relatives(task_or_task_list, upstream=True)
+        from airflow.operators.subdag_operator import NewSubDagOperator
+        tasks = []
+        try:
+            task_list = list(task_or_task_list)  # type: ignore
+        except TypeError:
+            task_list = [task_or_task_list] 
+        for task in task_list:
+            if isinstance(task, NewSubDagOperator):
+                tasks.extend(task.subdag.leaves)
+            else:
+                tasks.append(task)
+        
+        # breakpoint()
+        if isinstance(self, NewSubDagOperator): 
+            cross_downstream(from_tasks=self.subdag.roots, to_tasks=task_list)
+        else:
+            self._set_relatives(task_list, upstream=True)
 
     @property
     def output(self):

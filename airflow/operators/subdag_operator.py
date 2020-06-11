@@ -19,7 +19,7 @@
 The module which provides a way to nest your DAGs and so your levels of complexity.
 """
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
 from sqlalchemy.orm.session import Session
 
@@ -29,6 +29,7 @@ from airflow.models import DagRun
 from airflow.models.dag import DAG, DagContext
 from airflow.models.pool import Pool
 from airflow.models.taskinstance import TaskInstance
+from airflow.models import BaseOperator
 from airflow.sensors.base_sensor_operator import BaseSensorOperator
 from airflow.utils.decorators import apply_defaults
 from airflow.utils.session import create_session, provide_session
@@ -211,3 +212,48 @@ class SubDagOperator(BaseSensorOperator):
             self.skip(context['dag_run'], context['execution_date'], downstream_tasks)
 
         self.log.info('Done.')
+
+
+
+class NewSubDagOperator(BaseOperator):
+    """
+    This runs a sub dag. By convention, a sub dag's dag_id
+    should be prefixed by its parent and a dot. As in `parent.child`.
+
+    Although SubDagOperator can occupy a pool/concurrency slot,
+    user can specify the mode=reschedule so that the slot will be
+    released periodically to avoid potential deadlock.
+
+    :param subdag: the DAG object to run as a subdag of the current DAG.
+    :param session: sqlalchemy session
+    :param propagate_skipped_state: by setting this argument you can define
+        whether the skipped state of leaf task(s) should be propagated to the parent dag's downstream task.
+    """
+
+    ui_color = '#555'
+    ui_fgcolor = '#fff'
+
+    # @provide_session
+    @apply_defaults
+    def __init__(self,
+                 subdag: DAG,
+                 *args, **kwargs) -> None:
+        
+        super().__init__(*args, **kwargs)
+        self.subdag = subdag
+        self.unpack_subdag()
+
+    def unpack_subdag(self):
+        parent_dag = self._dag
+
+        for subdag_task in self.subdag.tasks:
+            del subdag_task._dag
+            parent_dag.add_task(subdag_task)
+            # still need to add some metadata to differentiate how nested are these tasks.
+            # root_group: root_dag
+            # parent_group: parent_dag
+
+        del parent_dag.task_dict[self.task_id]
+
+        
+    
