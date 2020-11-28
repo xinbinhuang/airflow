@@ -87,7 +87,17 @@ class BigQueryConsoleIndexableLink(BaseOperatorLink):
         return BIGQUERY_JOB_DETAILS_LINK_FMT.format(job_id=job_id)
 
 
-class BigQueryCheckOperator(CheckOperator):
+class BigQueryDbHookMixin:
+    def get_db_hook(self) -> BigQueryHook:
+        return BigQueryHook(
+            gcp_conn_id=self.gcp_conn_id,
+            use_legacy_sql=self.use_legacy_sql,
+            location=self.location,
+            impersonation_chain=self.impersonation_chain,
+        )
+
+
+class BigQueryCheckOperator(CheckOperator, BigQueryDbHookMixin):
     """
     Performs checks against BigQuery. The ``BigQueryCheckOperator`` expects
     a sql query that will return a single row. Each value on that
@@ -174,16 +184,8 @@ class BigQueryCheckOperator(CheckOperator):
         self.location = location
         self.impersonation_chain = impersonation_chain
 
-    def get_db_hook(self) -> BigQueryHook:
-        return BigQueryHook(
-            gcp_conn_id=self.gcp_conn_id,
-            use_legacy_sql=self.use_legacy_sql,
-            location=self.location,
-            impersonation_chain=self.impersonation_chain,
-        )
 
-
-class BigQueryValueCheckOperator(ValueCheckOperator):
+class BigQueryValueCheckOperator(ValueCheckOperator, BigQueryDbHookMixin):
     """
     Performs a simple value check using sql code.
 
@@ -249,16 +251,8 @@ class BigQueryValueCheckOperator(ValueCheckOperator):
         self.use_legacy_sql = use_legacy_sql
         self.impersonation_chain = impersonation_chain
 
-    def get_db_hook(self) -> BigQueryHook:
-        return BigQueryHook(
-            gcp_conn_id=self.gcp_conn_id,
-            use_legacy_sql=self.use_legacy_sql,
-            location=self.location,
-            impersonation_chain=self.impersonation_chain,
-        )
 
-
-class BigQueryIntervalCheckOperator(IntervalCheckOperator):
+class BigQueryIntervalCheckOperator(IntervalCheckOperator, BigQueryDbHookMixin):
     """
     Checks that the values of metrics given as SQL expressions are within
     a certain tolerance of the ones from days_back before.
@@ -343,14 +337,6 @@ class BigQueryIntervalCheckOperator(IntervalCheckOperator):
         self.use_legacy_sql = use_legacy_sql
         self.location = location
         self.impersonation_chain = impersonation_chain
-
-    def get_db_hook(self) -> BigQueryHook:
-        return BigQueryHook(
-            gcp_conn_id=self.gcp_conn_id,
-            use_legacy_sql=self.use_legacy_sql,
-            location=self.location,
-            impersonation_chain=self.impersonation_chain,
-        )
 
 
 class BigQueryGetDataOperator(BaseOperator):
