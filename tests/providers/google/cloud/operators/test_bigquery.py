@@ -682,13 +682,16 @@ class TestBigQueryGetDatasetTablesOperator(unittest.TestCase):
     ],
 )
 class TestBigQueryCheckOperators:
-    def test_get_db_hook_return_bigquery_hook(
+    @mock.patch("airflow.providers.google.cloud.operators.bigquery._BigQueryDbHookMixin.get_db_hook")
+    def test_get_db_hook(
         self,
+        mock_get_db_hook,
         operator_class,
         kwargs,
     ):
         operator = operator_class(gcp_conn_id='google_cloud_default', **kwargs)
-        assert isinstance(operator.get_db_hook(), BigQueryHook)
+        operator.get_db_hook()
+        mock_get_db_hook.assert_called_once()
 
 
 class TestBigQueryConnIdDeprecationWarning(unittest.TestCase):
