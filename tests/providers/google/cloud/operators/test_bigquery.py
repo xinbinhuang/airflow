@@ -28,6 +28,7 @@ from parameterized import parameterized
 from airflow import models
 from airflow.exceptions import AirflowException
 from airflow.models import DAG, TaskFail, TaskInstance, XCom
+from airflow.providers.google.cloud.hooks.bigquery import BigQueryHook
 from airflow.providers.google.cloud.operators.bigquery import (
     BigQueryCheckOperator,
     BigQueryConsoleIndexableLink,
@@ -664,6 +665,30 @@ class TestBigQueryGetDatasetTablesOperator(unittest.TestCase):
             project_id=TEST_GCP_PROJECT_ID,
             max_results=2,
         )
+
+
+@pytest.mark.parametrize(
+    "operator_class, kwargs",
+    [
+        (BigQueryCheckOperator, dict(sql='Select * from test_table', task_id=TASK_ID)),
+        (
+            BigQueryValueCheckOperator,
+            dict(sql='Select * from test_table', pass_value=95, task_id=TASK_ID),
+        ),
+        (
+            BigQueryIntervalCheckOperator,
+            dict(table=TEST_TABLE_ID, metrics_thresholds={'COUNT(*)': 1.5}, task_id=TASK_ID),
+        ),
+    ],
+)
+class TestBigQueryCheckOperators:
+    def test_get_db_hook_return_bigquery_hook(
+        self,
+        operator_class,
+        kwargs,
+    ):
+        operator = operator_class(gcp_conn_id='google_cloud_default', **kwargs)
+        assert isinstance(operator.get_db_hook(), BigQueryHook)
 
 
 class TestBigQueryConnIdDeprecationWarning(unittest.TestCase):
