@@ -534,7 +534,6 @@ class BranchSQLOperator(BaseSQLOperator, SkipMixin):
         self.follow_task_ids_if_true = follow_task_ids_if_true
         self.follow_task_ids_if_false = follow_task_ids_if_false
         self.database = database
-        self._hook = None
 
     def execute(self, context: Dict):
         if self._hook is None:
