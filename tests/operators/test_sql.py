@@ -26,7 +26,6 @@ from airflow.exceptions import AirflowException
 from airflow.models import DAG, Connection, DagRun, TaskInstance as TI
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.sql import (
-    BaseSQLOperator,
     BranchSQLOperator,
     SQLCheckOperator,
     SQLIntervalCheckOperator,
